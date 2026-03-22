@@ -1,0 +1,14 @@
+# Игнорируем файлы Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+.env
+
+# Игнорируем файлы C# и Visual Studio
+bin/
+obj/
+.vs/
+*.user
+*.suo
