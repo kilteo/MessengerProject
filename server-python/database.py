@@ -40,3 +40,33 @@ def register_user(login, password, name):
     conn.close()
     return reg_status
 
+def create_chat(name, is_group, creator_id):
+    conn = psycopg2.connect(dbname='messenger_db', user='postgres', password='12345', host='localhost', port='5432')
+    cur = conn.cursor()
+    new_chat_id = 0
+    cur.execute('INSERT INTO chats (name, is_group) VALUES (%s, %s) RETURNING id', (name, is_group))
+    new_chat_id = cur.fetchone()[0]
+    cur.execute('INSERT INTO chat_members (chat_id, user_id) VALUES (%s, %s)', (new_chat_id, creator_id))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return new_chat_id
+
+def get_users_chats(user_id):
+    conn = psycopg2.connect(dbname='messenger_db', user='postgres', password='12345', host='localhost', port='5432')
+    cur = conn.cursor()
+    cur.execute('SELECT chats.id, chats.name, chats.is_group FROM chats JOIN chat_members ON chats.id = chat_members.chat_id WHERE chat_members.user_id=%s', (user_id,))
+    chats = cur.fetchall()
+    cur.close()
+    conn.close()
+    return chats
+
+
+def get_messages(chat_id):
+    conn = psycopg2.connect(dbname='messenger_db', user='postgres', password='12345', host='localhost', port='5432')
+    cur = conn.cursor()
+    cur.execute('SELECT * FROM messages WHERE chat_id = %s ORDER BY sent_at ASC',(chat_id,))
+    messages = cur.fetchall()
+    cur.close()
+    conn.close()
+    return messages
