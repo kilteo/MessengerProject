@@ -22,6 +22,7 @@ def save_messages(chat_id, sender_id, text):
     conn.commit()
     cur.close()
     conn.close()
+    return True
 
 
 def register_user(login, password, name):

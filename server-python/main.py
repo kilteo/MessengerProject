@@ -1,5 +1,6 @@
 import socket
 import sys
+import json
 import database
 
 HOST = 'localhost'
@@ -25,12 +26,29 @@ while True:
                     client_socket.sendall('SUCCESS'.encode('utf-8'))
                 else:
                     client_socket.sendall('ERROR'.encode('utf-8'))
+
             elif parts[0] == 'LOGIN':
                 result = database.verify_user(parts[1], parts[2])
-                if result:  # Если вернулся ID (например, 5), то это сработает!
-                        # Отправляем клиенту SUCCESS и его ID через черточку
+                if result:
                     response = f"SUCCESS|{result}"
                     client_socket.sendall(response.encode('utf-8'))
+                else:
+                    client_socket.sendall('ERROR'.encode('utf-8'))
+
+            elif parts[0] == 'GET_CHATS':
+                chats = database.get_users_chats(parts[1])
+                json_string = json.dumps(chats)
+                client_socket.sendall(json_string.encode('utf-8'))
+
+            elif parts[0] == 'GET_MESSAGES':
+                messages = database.get_messages(parts[1])
+                json_string = json.dumps(messages, default=str)
+                client_socket.sendall(json_string.encode('utf-8'))
+
+            elif parts[0] == 'SEND_MESSAGE':
+                message = database.save_messages(parts[1], parts[2], parts[3])
+                if message:
+                    client_socket.sendall("SUCCESS".encode('utf-8'))
                 else:
                     client_socket.sendall('ERROR'.encode('utf-8'))
 
