@@ -6,12 +6,28 @@
         xmlns:local="clr-namespace:MessengerClient"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
-    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-        <TextBlock Text="Логин: "/>
-        <TextBox Width="200" x:Name="LoginBox"/>
-        <TextBlock Text="Пароль: " Margin="0,10,0,0"/>
-        <PasswordBox Width="200" x:Name="PasswordBox"/>
-        <Button Content="Войти" Click="LoginButton_Click" Name="LoginButton" Width="100" Margin="0,15,0,0"/>
-        <TextBlock x:Name="ErrorText" Foreground="Red" Margin="0,10,0,0" TextAlignment="Center" />
-    </StackPanel>
+    <Grid>
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" x:Name="LoginPanel">
+            <TextBlock Text="Логин: "/>
+            <TextBox Width="200" x:Name="LoginBox"/>
+            <TextBlock Text="Пароль: " Margin="0,10,0,0"/>
+            <PasswordBox Width="200" x:Name="PasswordBox"/>
+            <Button Content="Войти" Click="LoginButton_Click" Name="LoginButton" Width="100" Margin="0,15,0,0"/>
+            <TextBlock Text="Нет аккаунта? Регистрация" HorizontalAlignment="Right" Margin="0,10,0,0" TextDecorations="Underline" Cursor="Hand" Foreground="#FF1352ED" x:Name="RegistrationButton" MouseLeftButtonDown="RegistrationButton_MouseLeftButtonDown"  />
+            <TextBlock x:Name="ErrorText" Foreground="Red" Margin="0,10,0,0" TextAlignment="Center" />
+        </StackPanel>
+        <StackPanel x:Name="RegisterPanel" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <TextBlock Text="Логин: "/>
+            <TextBox Width="200" x:Name="RegLoginBox"/>
+            <TextBlock Text="Имя пользователя:" Margin="0,10,0,0"/>
+            <TextBox Width="200" x:Name="RegNameBox"/>
+            <TextBlock Text="Пароль: " Margin="0,10,0,0"/>
+            <PasswordBox Width="200" x:Name="RegPasswordBox"/>
+            <TextBlock Text="Повторите пароль: " Margin="0,10,0,0"/>
+            <PasswordBox Width="200" x:Name="RegPasswordCheckBox"/>
+            <Button Content="Регистрация" Click="RegistrationButton_Click" Name="RegRegistrationButton" Width="100" Margin="0,15,0,0"/>
+            <TextBlock Text="Уже есть аккаунт? Войти" HorizontalAlignment="Right" Margin="0,10,0,0" TextDecorations="Underline" Cursor="Hand" Foreground="#FF1352ED" x:Name="RegLoginButton" MouseLeftButtonDown="RegLoginButton_MouseLeftButtonDown" />
+            <TextBlock x:Name="RegErrorText" Foreground="Red" Margin="0,10,0,0" TextAlignment="Center" />
+        </StackPanel>
+    </Grid>
 </Window>
