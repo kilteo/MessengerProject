@@ -5,29 +5,111 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MessengerClient"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" 
+        
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        Height="450" Width="800">
+
+    <Window.Resources>
+        <local:MessageAlignmentConverter x:Key="AlignmentConverter"/>
+        <local:MessageBackgroundConverter x:Key="BackgroundConverter"/>
+    </Window.Resources>
     <Grid>
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" x:Name="LoginPanel">
-            <TextBlock Text="Логин: "/>
-            <TextBox Width="200" x:Name="LoginBox"/>
-            <TextBlock Text="Пароль: " Margin="0,10,0,0"/>
-            <PasswordBox Width="200" x:Name="PasswordBox"/>
-            <Button Content="Войти" Click="LoginButton_Click" Name="LoginButton" Width="100" Margin="0,15,0,0"/>
-            <TextBlock Text="Нет аккаунта? Регистрация" HorizontalAlignment="Right" Margin="0,10,0,0" TextDecorations="Underline" Cursor="Hand" Foreground="#FF1352ED" x:Name="RegistrationButton" MouseLeftButtonDown="RegistrationButton_MouseLeftButtonDown"  />
-            <TextBlock x:Name="ErrorText" Foreground="Red" Margin="0,10,0,0" TextAlignment="Center" />
-        </StackPanel>
-        <StackPanel x:Name="RegisterPanel" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <TextBlock Text="Логин: "/>
-            <TextBox Width="200" x:Name="RegLoginBox"/>
-            <TextBlock Text="Имя пользователя:" Margin="0,10,0,0"/>
-            <TextBox Width="200" x:Name="RegNameBox"/>
-            <TextBlock Text="Пароль: " Margin="0,10,0,0"/>
-            <PasswordBox Width="200" x:Name="RegPasswordBox"/>
-            <TextBlock Text="Повторите пароль: " Margin="0,10,0,0"/>
-            <PasswordBox Width="200" x:Name="RegPasswordCheckBox"/>
-            <Button Content="Регистрация" Click="RegistrationButton_Click" Name="RegRegistrationButton" Width="100" Margin="0,15,0,0"/>
-            <TextBlock Text="Уже есть аккаунт? Войти" HorizontalAlignment="Right" Margin="0,10,0,0" TextDecorations="Underline" Cursor="Hand" Foreground="#FF1352ED" x:Name="RegLoginButton" MouseLeftButtonDown="RegLoginButton_MouseLeftButtonDown" />
-            <TextBlock x:Name="RegErrorText" Foreground="Red" Margin="0,10,0,0" TextAlignment="Center" />
-        </StackPanel>
+        <Grid x:Name="AuthScreen">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" x:Name="LoginPanel">
+                <TextBlock Text="Логин: "/>
+                <TextBox Width="200" x:Name="LoginBox"/>
+                <TextBlock Text="Пароль: " Margin="0,10,0,0"/>
+                <PasswordBox Width="200" x:Name="PasswordBox"/>
+                <Button Content="Войти" Click="LoginButton_Click" Name="LoginButton" Width="100" Margin="0,15,0,0"/>
+                <TextBlock Text="Нет аккаунта? Регистрация" HorizontalAlignment="Right" Margin="0,10,0,0" TextDecorations="Underline" Cursor="Hand" Foreground="#FF1352ED" x:Name="RegistrationButton" MouseLeftButtonDown="RegistrationButton_MouseLeftButtonDown"  />
+                <TextBlock x:Name="ErrorText" Foreground="Red" Margin="0,10,0,0" TextAlignment="Center" />
+            </StackPanel>
+            <StackPanel x:Name="RegisterPanel" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="Логин: "/>
+                <TextBox Width="200" x:Name="RegLoginBox"/>
+                <TextBlock Text="Имя пользователя:" Margin="0,10,0,0"/>
+                <TextBox Width="200" x:Name="RegNameBox"/>
+                <TextBlock Text="Пароль: " Margin="0,10,0,0"/>
+                <PasswordBox Width="200" x:Name="RegPasswordBox"/>
+                <TextBlock Text="Повторите пароль: " Margin="0,10,0,0"/>
+                <PasswordBox Width="200" x:Name="RegPasswordCheckBox"/>
+                <Button Content="Регистрация" Click="RegistrationButton_Click" Name="RegRegistrationButton" Width="100" Margin="0,15,0,0"/>
+                <TextBlock Text="Уже есть аккаунт? Войти" HorizontalAlignment="Right" Margin="0,10,0,0" TextDecorations="Underline" Cursor="Hand" Foreground="#FF1352ED" x:Name="RegLoginButton" MouseLeftButtonDown="RegLoginButton_MouseLeftButtonDown" />
+                <TextBlock x:Name="RegErrorText" Foreground="Red" Margin="0,10,0,0" TextAlignment="Center" />
+            </StackPanel>
+        </Grid>
+        <Grid x:Name="ChatScreen" Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="250"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Button Grid.Row="0"  Content="☰ Меню"/>
+                <ListBox x:Name="Chats" Grid.Row="1" SelectionChanged="Chats_SelectionChanged">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="5">
+                                <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="14"/>
+
+                                <TextBlock Text="{Binding LastMessage}" Foreground="Gray" />
+
+                                <TextBlock Text="{Binding Date}" FontSize="10" Foreground="LightGray" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Text="Имя чата" x:Name="CurrentChatTittle" Visibility="Collapsed"/>
+                <TextBlock Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Text="Выберете чат для начала общения!" x:Name="PlaceHolderChat"/>
+                <ListBox Grid.Row="1" x:Name="MessagesList" Visibility="Collapsed" 
+         BorderThickness="0" Background="#F0F2F5" 
+         HorizontalContentAlignment="Stretch"
+         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Focusable" Value="False"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <ContentPresenter/>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border CornerRadius="18"  Padding="12,8"     MaxWidth="400"
+        Background="{Binding IsMine, Converter={StaticResource BackgroundConverter}}"
+        HorizontalAlignment="{Binding IsMine, Converter={StaticResource AlignmentConverter}}"
+        Margin="10,5">
+                                <Border.Effect>
+                                    <DropShadowEffect ShadowDepth="1" BlurRadius="2" Opacity="0.1"/>
+                                </Border.Effect>
+
+                                <StackPanel>
+                                    <TextBlock Text="{Binding SenderName}" FontWeight="Bold" Foreground="#1352ED" FontSize="13" Margin="0,0,0,5"/>
+
+                                    <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="14" Foreground="Black"/>
+
+                                    <TextBlock Text="{Binding Time}" FontSize="10" Foreground="Gray" HorizontalAlignment="Right" Margin="0,5,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+        </Grid>
     </Grid>
 </Window>
