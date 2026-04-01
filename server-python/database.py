@@ -91,6 +91,3 @@ def get_messages(chat_id):
     conn.close()
     return formated_messages
 
-
-if __name__ == '__main__':
-    print(get_users_chats(1))
