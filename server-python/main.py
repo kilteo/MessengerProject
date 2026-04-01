@@ -23,9 +23,10 @@ def handle_client(client_socket, client_address):
             parts = text.split('|')
             print(parts)
             if parts[0] == 'REGISTER':
-                result = database.register_user(parts[1], parts[2], parts[3])
-                if result == True:
-                    client_socket.sendall('SUCCESS'.encode('utf-8'))
+                is_success, user_id = database.register_user(parts[1], parts[2], parts[3])
+                if is_success:
+                    response = f"SUCCESS|{user_id}"
+                    client_socket.sendall(response.encode('utf-8'))
                 else:
                     client_socket.sendall('ERROR'.encode('utf-8'))
 
@@ -44,7 +45,7 @@ def handle_client(client_socket, client_address):
 
             elif parts[0] == 'GET_MESSAGES':
                 messages = database.get_messages(parts[1])
-                json_string = json.dumps(messages, default=str)
+                json_string = "GET_MESSAGES_SUCCESS|" + json.dumps(messages)
                 client_socket.sendall(json_string.encode('utf-8'))
 
             elif parts[0] == 'SEND_MESSAGE':
@@ -53,6 +54,11 @@ def handle_client(client_socket, client_address):
                     client_socket.sendall("SUCCESS".encode('utf-8'))
                 else:
                     client_socket.sendall('ERROR'.encode('utf-8'))
+
+            elif parts[0] == 'GET_USERS':
+                users = database.get_users_chats(parts[1])
+                json_string = "GET_USERS_SUCCESS|" + json.dumps(users)
+                client_socket.sendall(json_string.encode('utf-8'))
 
     finally:
         print(f"Клиент {client_address} отключился.")
