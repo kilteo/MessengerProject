@@ -51,7 +51,7 @@ def handle_client(client_socket, client_address):
             elif parts[0] == 'SEND_MESSAGE':
                 message = database.save_messages(parts[1], parts[2], parts[3])
                 if message:
-                    client_socket.sendall("SUCCESS".encode('utf-8'))
+                    client_socket.sendall("SEND_MESSAGE_SUCCESS|".encode('utf-8'))
                 else:
                     client_socket.sendall('ERROR'.encode('utf-8'))
 
@@ -59,6 +59,11 @@ def handle_client(client_socket, client_address):
                 users = database.get_users_chats(parts[1])
                 json_string = "GET_USERS_SUCCESS|" + json.dumps(users)
                 client_socket.sendall(json_string.encode('utf-8'))
+
+            elif parts[0] == 'CREATE_CHAT':
+                result = database.create_personal_chat(parts[1], parts[2])
+                response = f"CREATE_CHAT_RESULT|{result}"
+                client_socket.sendall(response.encode('utf-8'))
 
     finally:
         print(f"Клиент {client_address} отключился.")
