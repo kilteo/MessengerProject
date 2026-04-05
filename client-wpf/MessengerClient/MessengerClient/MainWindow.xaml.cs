@@ -13,6 +13,7 @@ using System.Windows.Xps.Serialization;
 using System.Text.Json.Serialization;
 using System.Text.Json;
 using System.Globalization;
+using System.IO;
 
 
 
@@ -51,12 +52,14 @@ namespace MessengerClient
     /// </summary>
     public partial class MainWindow : Window
     {
+        private const string ServerIp = "127.0.0.1";
+        private const int ServerPort = 10000;
         public int CurrentUserId;
         public MainWindow()
         {
             InitializeComponent();
             List<ChatModel> myChats = new List<ChatModel>();
-            myChats.Add(new ChatModel { Title = "Мама", LastMessage = "Купи хлеб!", Date = "19:05" });
+
             Chats.ItemsSource = myChats;
         }
 
@@ -72,7 +75,7 @@ namespace MessengerClient
                 message = ($"LOGIN|{LoginBox.Text.Trim()}|{PasswordBox.Password.Trim()}");
                 try
                 {
-                    TcpClient client = new TcpClient("127.0.0.1", 10000);
+                    TcpClient client = new TcpClient(ServerIp, ServerPort);
                     NetworkStream stream = client.GetStream();
                     byte[] data = Encoding.UTF8.GetBytes(message);
                     stream.Write(data, 0, data.Length);
@@ -85,19 +88,8 @@ namespace MessengerClient
                         AuthScreen.Visibility = Visibility.Collapsed;
                         ChatScreen.Visibility = Visibility.Visible;
                         ErrorText.Text = "";
-                        byte[] chat = Encoding.UTF8.GetBytes("GET_USERS|" + parts[1]);
-                        stream.Write(chat, 0, chat.Length);
-                        byte[] chatsBuffer = new byte[8192];
-                        int byteChats = stream.Read(chatsBuffer, 0, chatsBuffer.Length);
-                        string chatt = Encoding.UTF8.GetString(chatsBuffer, 0, byteChats);
-                        string[] chatParts = chatt.Split(new char[] { '|' }, 2);
                         CurrentUserId = int.Parse(parts[1]);
-                        if (chatParts[0] == "GET_USERS_SUCCESS")
-                        {
-                            string json = chatParts[1];
-                            List<ChatModel> myChats = JsonSerializer.Deserialize<List<ChatModel>>(json);
-                            Chats.ItemsSource = myChats;
-                        }
+                        LoadMyChats();
                     }
                     else
                     {
@@ -132,7 +124,7 @@ namespace MessengerClient
                 message = ($"REGISTER|{RegLoginBox.Text.Trim()}|{RegPasswordBox.Password.Trim()}|{RegNameBox.Text.Trim()}");
                 try
                 {
-                    TcpClient client = new TcpClient("127.0.0.1", 10000);
+                    TcpClient client = new TcpClient(ServerIp,ServerPort);
                     NetworkStream stream = client.GetStream();
                     byte[] data = Encoding.UTF8.GetBytes(message);
                     stream.Write(data, 0, data.Length);
@@ -145,19 +137,8 @@ namespace MessengerClient
                         AuthScreen.Visibility = Visibility.Collapsed;
                         ChatScreen.Visibility = Visibility.Visible;
                         ErrorText.Text = "";
-                        byte[] chat = Encoding.UTF8.GetBytes("GET_USERS|" + parts[1]);
-                        stream.Write(chat, 0, chat.Length);
-                        byte[] chatsBuffer = new byte[8192];
-                        int byteChats = stream.Read(chatsBuffer, 0, chatsBuffer.Length); 
-                        string chatt = Encoding.UTF8.GetString(chatsBuffer, 0, byteChats);
-                        string[] chatParts = chatt.Split(new char[] { '|' }, 2);
                         CurrentUserId = int.Parse(parts[1]);
-                        if (chatParts[0] == "GET_USERS_SUCCESS")
-                        {
-                            string json = chatParts[1];
-                            List<ChatModel> myChats = JsonSerializer.Deserialize<List<ChatModel>>(json);
-                            Chats.ItemsSource = myChats;
-                        }
+                        LoadMyChats();
                     }
                     else
                     {
@@ -206,8 +187,10 @@ namespace MessengerClient
             [JsonPropertyName("text")]
             public string Text { get; set; }
             [JsonPropertyName("time")]
-            public string Time { get; set; }
+            public DateTime Time { get; set; }
             public bool IsMine { get; set; }
+            public string DateBannerText { get; set; }
+            public Visibility DateBannerVisibility { get; set; } = Visibility.Collapsed;
         }
 
 
@@ -218,43 +201,230 @@ namespace MessengerClient
             {
                 CurrentChatTittle.Visibility = Visibility.Visible;
                 MessagesList.Visibility = Visibility.Visible;
+                MessageInputPanel.Visibility = Visibility.Visible;
                 CurrentChatTittle.Text = selectedChat.Title;
+                LoadChatHistory(selectedChat.Id);
+            }
+        }
+
+        private void MessageInputBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (string.IsNullOrEmpty(MessageInputBox.Text))
+            {
+                PlaceholderText.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                PlaceholderText.Visibility = Visibility.Collapsed;
+            }
+            if (string.IsNullOrWhiteSpace(MessageInputBox.Text))
+            {
+                SendCustomButton.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                SendCustomButton.Visibility = Visibility.Visible;
+            }
+        }
+
+        private void LoadChatHistory(int chatId)
+        {
+            try
+            {
+                TcpClient client = new TcpClient(ServerIp, ServerPort);
+                NetworkStream stream = client.GetStream();
+
+                string request = "GET_MESSAGES|" + chatId;
+                byte[] data = Encoding.UTF8.GetBytes(request);
+                stream.Write(data, 0, data.Length);
+
+                byte[] buffer = new byte[8192];
+                int bytesRead = stream.Read(buffer, 0, buffer.Length);
+                string response = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+
+                string[] parts = response.Split(new char[] { '|' }, 2);
+                if (parts[0] == "GET_MESSAGES_SUCCESS")
+                {
+                    string json = parts[1];
+                    List<MessageModel> history = JsonSerializer.Deserialize<List<MessageModel>>(json);
+                    for (int i = 0; i < history.Count; i++)
+                    {
+                        var currentMsg = history[i];
+                        if (currentMsg.SenderId == CurrentUserId)
+                        {
+                            currentMsg.IsMine = true;
+                        }
+                        bool isNewDay = false;
+                        if (i == 0)
+                        {
+                            isNewDay = true;
+                        }
+                        else
+                        {
+                            if (currentMsg.Time.Date != history[i - 1].Time.Date)
+                            {
+                                isNewDay = true;
+                            }
+                        }
+
+                        if (isNewDay)
+                        {
+                            currentMsg.DateBannerVisibility = Visibility.Visible;
+                            DateTime msgDate = currentMsg.Time.Date;
+
+                            if (msgDate == DateTime.Today)
+                            {
+                                currentMsg.DateBannerText = "Сегодня";
+                            }
+                            else if (msgDate == DateTime.Today.AddDays(-1))
+                            {
+                                currentMsg.DateBannerText = "Вчера";
+                            }
+                            else
+                            {
+                                currentMsg.DateBannerText = msgDate.ToString("d MMMM");
+                            }
+                        }
+                        else
+                        {
+                            currentMsg.DateBannerVisibility = Visibility.Collapsed;
+                        }
+                    }
+
+                    MessagesList.ItemsSource = history;
+                }
+
+                client.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Ошибка при загрузке сообщений: " + ex.Message);
+            }
+        }
+        private void SendMessageToServer()
+        {
+            if (string.IsNullOrWhiteSpace(MessageInputBox.Text))
+            {
+                return;
+            }
+            if (Chats.SelectedItem is ChatModel selectedChat)
+            {
+                string message = $"SEND_MESSAGE|{selectedChat.Id}|{CurrentUserId}|{MessageInputBox.Text.Trim()}";
+
                 try
                 {
-                    TcpClient client = new TcpClient("127.0.0.1", 10000);
+                    TcpClient client = new TcpClient(ServerIp,ServerPort);
                     NetworkStream stream = client.GetStream();
 
-                    string request = "GET_MESSAGES|" + selectedChat.Id;
-                    byte[] data = Encoding.UTF8.GetBytes(request);
+                    byte[] data = Encoding.UTF8.GetBytes(message);
                     stream.Write(data, 0, data.Length);
 
                     byte[] buffer = new byte[8192];
                     int bytesRead = stream.Read(buffer, 0, buffer.Length);
                     string response = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-
                     string[] parts = response.Split(new char[] { '|' }, 2);
-                    if (parts[0] == "GET_MESSAGES_SUCCESS")
+                    if (parts[0] == "SEND_MESSAGE_SUCCESS")
                     {
-                        string json = parts[1];
-                        List<MessageModel> history = JsonSerializer.Deserialize<List<MessageModel>>(json);
-
-                        foreach (var msg in history)
-                        {
-                            if (msg.SenderId == CurrentUserId)
-                            {
-                                msg.IsMine = true;
-                            }
-                        }
-
-                        MessagesList.ItemsSource = history;
+                        MessageInputBox.Text = ""; 
+                        LoadChatHistory(selectedChat.Id); 
                     }
 
                     client.Close();
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Ошибка при загрузке сообщений: " + ex.Message);
+                    MessageBox.Show("Ошибка при отправке сообщений: " + ex.Message);
                 }
+            }
+        }
+        private void SendCustomButton_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            SendMessageToServer();
+        }
+        private void MessageInputBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                SendMessageToServer();
+            }
+        }
+
+        private void CreateChatButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(SearchUserBox.Text))
+            {
+                return;
+            }
+            else
+            {
+                string message = $"CREATE_CHAT|{CurrentUserId}|{SearchUserBox.Text.Trim()}";
+                try
+                {
+                    TcpClient client = new TcpClient(ServerIp, ServerPort);
+                    NetworkStream stream = client.GetStream();
+                    byte[] data = Encoding.UTF8.GetBytes(message);
+                    stream.Write(data, 0, data.Length);
+                    byte[] buffer = new byte[8192];
+                    int bytesRead = stream.Read(buffer, 0, buffer.Length);
+                    string response = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                    string[] parts = response.Split('|');
+                    if (parts[1] == "SUCCESS" || parts[1] == "CHAT_ALREADY_EXISTS")
+                    {
+                        SearchUserBox.Text = "";
+                        LoadMyChats(); 
+
+                        if (parts.Length > 2 && int.TryParse(parts[2], out int targetChatId))
+                        {
+                            foreach (ChatModel chat in Chats.Items)
+                            {
+                                if (chat.Id == targetChatId)
+                                {
+                                    Chats.SelectedItem = chat;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    else if (parts[1] == "USER_NOT_FOUND")
+                    {
+                        MessageBox.Show("Пользователь с таким логином не найден!");
+                    }
+                    else if (parts[1] == "CANNOT_CHAT_WITH_SELF")
+                    {
+                        MessageBox.Show("Нельзя создать чат с самим собой!");
+                    }
+                    client.Close();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Ошибка при создании чата: " + ex.Message);
+                }
+            }
+        }
+
+        private void LoadMyChats()
+        {
+            try
+            {
+                TcpClient client = new TcpClient(ServerIp, ServerPort);
+                NetworkStream stream = client.GetStream();
+                byte[] chat = Encoding.UTF8.GetBytes("GET_USERS|" + CurrentUserId.ToString());
+                stream.Write(chat, 0, chat.Length);
+                byte[] chatsBuffer = new byte[8192];
+                int byteChats = stream.Read(chatsBuffer, 0, chatsBuffer.Length);
+                string chatt = Encoding.UTF8.GetString(chatsBuffer, 0, byteChats);
+                string[] chatParts = chatt.Split(new char[] { '|' }, 2);
+                if (chatParts[0] == "GET_USERS_SUCCESS")
+                {
+                    string json = chatParts[1];
+                    List<ChatModel> myChats = JsonSerializer.Deserialize<List<ChatModel>>(json);
+                    Chats.ItemsSource = myChats;
+                }
+                client.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Ошибка при загрузке списка чатов: " + ex.Message);
             }
         }
 

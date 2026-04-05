@@ -45,37 +45,76 @@
                 <ColumnDefinition Width="250"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <Grid Grid.Column="0">
+
+            <Grid Grid.Column="0" Background="#FAFAFA">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="25"/>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition Height="50"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <Button Grid.Row="0"  Content="☰ Меню"/>
-                <ListBox x:Name="Chats" Grid.Row="1" SelectionChanged="Chats_SelectionChanged">
+
+                <Button Grid.Row="0" Content="☰ Меню" Background="Transparent" BorderThickness="0"/>
+
+                <Grid Grid.Row="1" Margin="10,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBox x:Name="SearchUserBox" 
+                 Grid.Column="0" 
+                 VerticalContentAlignment="Center" 
+                 Padding="10,0" 
+                 Margin="0,0,5,0"
+                 FontSize="13"
+                 BorderThickness="0"
+                 ToolTip="Введите логин пользователя"/>
+
+                    <Button x:Name="CreateChatButton" 
+                Grid.Column="1" 
+                Content="➕" 
+                Width="40" 
+                FontSize="16"
+                Background="#1352ED" 
+                Foreground="White" 
+                BorderThickness="0"
+                Cursor="Hand"
+                Click="CreateChatButton_Click">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="20"/>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
+                </Grid>
+
+                <ListBox x:Name="Chats" Grid.Row="2" SelectionChanged="Chats_SelectionChanged" BorderThickness="0" Background="Transparent">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Margin="5">
                                 <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="14"/>
-
                                 <TextBlock Text="{Binding LastMessage}" Foreground="Gray" />
-
                                 <TextBlock Text="{Binding Date}" FontSize="10" Foreground="LightGray" />
                             </StackPanel>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
             </Grid>
+
             <Grid Grid.Column="1">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="25"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
+
                 <TextBlock Grid.Row="0" Text="Имя чата" x:Name="CurrentChatTittle" Visibility="Collapsed"/>
                 <TextBlock Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Text="Выберете чат для начала общения!" x:Name="PlaceHolderChat"/>
+
                 <ListBox Grid.Row="1" x:Name="MessagesList" Visibility="Collapsed" 
-         BorderThickness="0" Background="#F0F2F5" 
-         HorizontalContentAlignment="Stretch"
-         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                         BorderThickness="0" Background="#F0F2F5" 
+                         HorizontalContentAlignment="Stretch"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                     <ListBox.ItemContainerStyle>
                         <Style TargetType="ListBoxItem">
                             <Setter Property="Focusable" Value="False"/>
@@ -90,25 +129,80 @@
                     </ListBox.ItemContainerStyle>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Border CornerRadius="18"  Padding="12,8"     MaxWidth="400"
-        Background="{Binding IsMine, Converter={StaticResource BackgroundConverter}}"
-        HorizontalAlignment="{Binding IsMine, Converter={StaticResource AlignmentConverter}}"
-        Margin="10,5">
-                                <Border.Effect>
-                                    <DropShadowEffect ShadowDepth="1" BlurRadius="2" Opacity="0.1"/>
-                                </Border.Effect>
+                            <StackPanel Margin="0,5">
 
-                                <StackPanel>
-                                    <TextBlock Text="{Binding SenderName}" FontWeight="Bold" Foreground="#1352ED" FontSize="13" Margin="0,0,0,5"/>
+                                <Border Visibility="{Binding DateBannerVisibility}" 
+                    HorizontalAlignment="Center" 
+                    Background="#2A3942" 
+                    CornerRadius="12" 
+                    Padding="12,4" 
+                    Margin="0,15,0,15">
+                                    <TextBlock Text="{Binding DateBannerText}" 
+                           Foreground="White" 
+                           FontSize="12" 
+                           FontWeight="SemiBold"/>
+                                </Border>
 
-                                    <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="14" Foreground="Black"/>
+                                <Border CornerRadius="18" Padding="12,8" MaxWidth="400"
+                    Background="{Binding IsMine, Converter={StaticResource BackgroundConverter}}"
+                    HorizontalAlignment="{Binding IsMine, Converter={StaticResource AlignmentConverter}}">
+                                    <Border.Effect>
+                                        <DropShadowEffect ShadowDepth="1" BlurRadius="2" Opacity="0.1"/>
+                                    </Border.Effect>
 
-                                    <TextBlock Text="{Binding Time}" FontSize="10" Foreground="Gray" HorizontalAlignment="Right" Margin="0,5,0,0"/>
-                                </StackPanel>
-                            </Border>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding SenderName}" FontWeight="Bold" Foreground="#1352ED" FontSize="13" Margin="0,0,0,5"/>
+                                        <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="14" Foreground="Black"/>
+                                        <TextBlock Text="{Binding Time, StringFormat={}{0:HH:mm}}" FontSize="10" Foreground="Gray" HorizontalAlignment="Right" Margin="0,5,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
+                            </StackPanel>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
+
+                <Grid x:Name="MessageInputPanel" Grid.Row="2" Visibility="Collapsed" Margin="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Grid Grid.Column="0">
+                        <TextBox x:Name="MessageInputBox" 
+                                 Padding="15,10" 
+                                 FontSize="14"
+                                 Background="White"
+                                 BorderThickness="0"
+                                 VerticalContentAlignment="Center"
+                                 TextChanged="MessageInputBox_TextChanged"
+                                 KeyDown="MessageInputBox_KeyDown"/>
+
+                        <TextBlock x:Name="PlaceholderText" 
+                                   Text="Введите сообщение..." 
+                                   Foreground="Gray" 
+                                   FontSize="14"
+                                   VerticalAlignment="Center" 
+                                   Margin="17,0,0,0" 
+                                   IsHitTestVisible="False"/>
+                    </Grid>
+
+                    <Border Grid.Column="1" 
+                            x:Name="SendCustomButton" 
+                            Visibility="Collapsed" 
+                            Background="#1352ED" 
+                            Width="40" Height="40" 
+                            CornerRadius="20" 
+                            Margin="10,0,0,0" 
+                            Cursor="Hand" 
+                            MouseLeftButtonDown="SendCustomButton_MouseLeftButtonDown">
+                        <TextBlock Text="➤" 
+                                   Foreground="White" 
+                                   HorizontalAlignment="Center" 
+                                   VerticalAlignment="Center" 
+                                   FontSize="18"/>
+                    </Border>
+                </Grid>
             </Grid>
         </Grid>
     </Grid>
