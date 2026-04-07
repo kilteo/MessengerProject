@@ -53,7 +53,11 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <Button Grid.Row="0" Content="☰ Меню" Background="Transparent" BorderThickness="0"/>
+                <Menu Grid.Row="0" Background="Transparent" VerticalAlignment="Center" Margin="5,0,0,0">
+                    <MenuItem Header="☰ Меню" FontSize="14" Cursor="Hand">
+                        <MenuItem Header="🚪 Выйти из аккаунта" Click="Logout_Click" FontSize="14" Cursor="Hand"/>
+                    </MenuItem>
+                </Menu>
 
                 <Grid Grid.Row="1" Margin="10,5">
                     <Grid.ColumnDefinitions>

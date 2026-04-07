@@ -14,6 +14,7 @@ using System.Text.Json.Serialization;
 using System.Text.Json;
 using System.Globalization;
 using System.IO;
+using System.Windows.Threading;
 
 
 
@@ -55,12 +56,15 @@ namespace MessengerClient
         private const string ServerIp = "127.0.0.1";
         private const int ServerPort = 10000;
         public int CurrentUserId;
+        private DispatcherTimer chatRefreshTimer;
         public MainWindow()
         {
             InitializeComponent();
             List<ChatModel> myChats = new List<ChatModel>();
-
             Chats.ItemsSource = myChats;
+            chatRefreshTimer = new DispatcherTimer();
+            chatRefreshTimer.Interval = TimeSpan.FromSeconds(1);
+            chatRefreshTimer.Tick += ChatRefreshTimer_Tick;
         }
 
         private void LoginButton_Click(object sender, RoutedEventArgs e)
@@ -90,6 +94,8 @@ namespace MessengerClient
                         ErrorText.Text = "";
                         CurrentUserId = int.Parse(parts[1]);
                         LoadMyChats();
+                        chatRefreshTimer.Start();
+
                     }
                     else
                     {
@@ -109,6 +115,8 @@ namespace MessengerClient
         {
             LoginPanel.Visibility = Visibility.Collapsed;
             RegisterPanel.Visibility = Visibility.Visible;
+            LoginBox.Clear();
+            PasswordBox.Clear();
         }
 
         private void RegistrationButton_Click(object sender, RoutedEventArgs e)
@@ -139,6 +147,7 @@ namespace MessengerClient
                         ErrorText.Text = "";
                         CurrentUserId = int.Parse(parts[1]);
                         LoadMyChats();
+                        chatRefreshTimer.Start();
                     }
                     else
                     {
@@ -163,6 +172,10 @@ namespace MessengerClient
         {
             LoginPanel.Visibility = Visibility.Visible;
             RegisterPanel.Visibility = Visibility.Collapsed;
+            RegLoginBox.Clear();
+            RegNameBox.Clear();
+            RegPasswordBox.Clear();
+            RegPasswordCheckBox.Clear();
         }
 
 
@@ -292,6 +305,10 @@ namespace MessengerClient
                     }
 
                     MessagesList.ItemsSource = history;
+                    if (history.Count > 0)
+                    {
+                        MessagesList.ScrollIntoView(history[history.Count - 1]);
+                    }
                 }
 
                 client.Close();
@@ -406,6 +423,11 @@ namespace MessengerClient
         {
             try
             {
+                int? selectedChatId = null;
+                if (Chats.SelectedItem is ChatModel currentChat)
+                {
+                    selectedChatId = currentChat.Id;
+                }
                 TcpClient client = new TcpClient(ServerIp, ServerPort);
                 NetworkStream stream = client.GetStream();
                 byte[] chat = Encoding.UTF8.GetBytes("GET_USERS|" + CurrentUserId.ToString());
@@ -419,13 +441,55 @@ namespace MessengerClient
                     string json = chatParts[1];
                     List<ChatModel> myChats = JsonSerializer.Deserialize<List<ChatModel>>(json);
                     Chats.ItemsSource = myChats;
+                    if (selectedChatId != null)
+                    {
+                        foreach (ChatModel item in Chats.Items)
+                        {
+                            if (item.Id == selectedChatId.Value)
+                            {
+                                Chats.SelectedItem = item;
+                                break;
+                            }
+                        }
+                    }
                 }
                 client.Close();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Ошибка при загрузке списка чатов: " + ex.Message);
+                
             }
+        }
+
+        private void ChatRefreshTimer_Tick (object sender, EventArgs e)
+        {
+            LoadMyChats();
+
+            if (Chats.SelectedItem is ChatModel selectedChat)
+            {
+                LoadChatHistory(selectedChat.Id);
+            }
+        }
+        private void Logout_Click(object sender, RoutedEventArgs e)
+        {
+            if (chatRefreshTimer != null)
+            {
+                chatRefreshTimer.Stop();
+            }
+            CurrentUserId = 0;
+            Chats.ItemsSource = null;
+            MessagesList.ItemsSource = null;
+            CurrentChatTittle.Text = "";
+
+            CurrentChatTittle.Visibility = Visibility.Collapsed;
+            MessagesList.Visibility = Visibility.Collapsed;
+            MessageInputPanel.Visibility = Visibility.Collapsed;
+
+            PasswordBox.Clear();
+            LoginBox.Clear();
+
+            ChatScreen.Visibility = Visibility.Collapsed;
+            AuthScreen.Visibility = Visibility.Visible;
         }
 
     }   
